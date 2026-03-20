@@ -11,6 +11,7 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
+import sharp from "sharp";
 import { CHARSET_STANDARD } from "@/lib/ascii";
 
 export const runtime = "nodejs";
@@ -53,37 +54,36 @@ export async function POST(
     }
 
     // -------------------------------------------------------
-    // Procesamiento real: convertimos la imagen a ASCII
-    // usando el modulo 'canvas' disponible en Node.js runtime.
-    // Importacion dinamica para que no rompa el edge runtime.
+    // Decodificamos el base64 (con o sin prefijo data:image/...)
     // -------------------------------------------------------
-    const { createCanvas, loadImage } = await import("@napi-rs/canvas");
-
-    // Decodificamos el base64 (puede venir con o sin prefijo data:image/...)
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-    const buffer = Buffer.from(base64Data, "base64");
+    const inputBuffer = Buffer.from(base64Data, "base64");
 
-    const img = await loadImage(buffer);
-    const canvas = createCanvas(cols * 2, rows * 2);
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // -------------------------------------------------------
+    // sharp redimensiona la imagen a cols×rows pixeles y
+    // nos da los canales RGB en un Buffer plano.
+    // Cada pixel = 3 bytes: [R, G, B, R, G, B, ...]
+    // -------------------------------------------------------
+    const { data, info } = await sharp(inputBuffer)
+      .resize(cols, rows, { fit: "fill" })
+      .removeAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
 
-    // Convertir pixeles a ASCII
-    const { data, width, height } = imageData;
-    const cellW = width / cols;
-    const cellH = height / rows;
+    // -------------------------------------------------------
+    // Convertimos cada pixel a un caracter ASCII
+    // usando luminancia perceptual como índice en el charset.
+    // -------------------------------------------------------
     let ascii = "";
 
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const px = Math.floor(col * cellW + cellW / 2);
-        const py = Math.floor(row * cellH + cellH / 2);
-        const idx = (py * width + px) * 4;
-
+    for (let row = 0; row < info.height; row++) {
+      for (let col = 0; col < info.width; col++) {
+        const idx = (row * info.width + col) * 3; // 3 canales: R G B
         const r = data[idx];
         const g = data[idx + 1];
         const b = data[idx + 2];
+
+        // Luminancia perceptual 
         const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
         const charIdx = Math.floor((brightness / 255) * (charset.length - 1));
         ascii += charset[charIdx];
@@ -91,12 +91,13 @@ export async function POST(
       ascii += "\n";
     }
 
+
     const processingTimeMs = Date.now() - start;
 
     return NextResponse.json({
       ascii,
-      cols,
-      rows,
+      cols: info.width,
+      rows: info.height,
       charset: charset.slice(0, 10) + "...",
       processingTimeMs,
       timestamp: new Date().toISOString(),
