@@ -37,7 +37,7 @@ const ASCII_ROWS = 60;
 // ============================================================
 
 // ============================================================
-// TODO #3 — EQUIPO 3: Guardar captura como imagen PNG
+// TODO #3 — EQUIPO 3: Guardar captura como imagen PNG (COMPLETADO)
 // ============================================================
 // Implementar un boton "[ SAVE PNG ]" que:
 //   1. Cree un <canvas> temporal del tamaño del texto ASCII
@@ -149,6 +149,50 @@ export default function AsciiCamera() {
     setFps(0);
   }, []);
 
+  // ============================================================
+  // Implementación TODO #3: Guardar captura como PNG
+  // ============================================================
+  const handleSavePng = useCallback(() => {
+    if (!asciiOutput) return;
+
+    // 1. Crear un canvas temporal
+    const tempCanvas = document.createElement("canvas");
+    const ctx = tempCanvas.getContext("2d");
+    if (!ctx) return;
+
+    // Calculamos las dimensiones
+    const fontSize = 10; 
+    const lineHeight = 10;
+    
+    // Separamos el string ASCII en lineas
+    const lines = asciiOutput.split('\n');
+    
+    // Configuramos el tamaño del canvas basado en el texto
+    tempCanvas.width = lines[0].length * (fontSize * 0.6); 
+    tempCanvas.height = lines.length * lineHeight;
+
+    // 2. Renderizar el fondo y el texto
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+    ctx.fillStyle = "#4ade80"; // verde terminal
+    ctx.font = `${fontSize}px monospace`;
+    ctx.textBaseline = "top";
+
+    // Dibujamos linea por linea
+    lines.forEach((line, index) => {
+      ctx.fillText(line, 0, index * lineHeight);
+    });
+
+    // 3. Convertir a imagen y descargar
+    const dataUrl = tempCanvas.toDataURL("image/png");
+    
+    const link = document.createElement("a");
+    link.download = `ascii-cam-${Date.now()}.png`;
+    link.href = dataUrl;
+    link.click();
+  }, [asciiOutput]);
+
   // Cleanup al desmontar
   useEffect(() => {
     return () => {
@@ -193,7 +237,7 @@ export default function AsciiCamera() {
 
         {isRunning && (
           <button
-            onClick={() => {}}
+            onClick={handleSavePng}
             className="px-5 py-2 bg-blue-900 hover:bg-blue-800 text-blue-300 border border-blue-600 rounded text-sm transition-all cursor-pointer"
           >
             [ SAVE PNG ]
