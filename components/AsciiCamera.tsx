@@ -157,6 +157,26 @@ export default function AsciiCamera() {
     };
   }, [stopCamera]);
 
+  const isTerminal = theme === "terminal";
+  const isAmber    = theme === "amber";
+
+  const themeClass = isTerminal ? "bg-black text-green-400"
+    : isAmber      ? "bg-black text-amber-400"
+    :                "bg-white text-gray-900";
+
+  const borderClass = isTerminal ? "border-green-900"
+    : isAmber       ? "border-amber-900"
+    :                 "border-gray-300";
+
+  const btnBase = isTerminal
+    ? "border border-green-700 bg-green-950 text-green-300 hover:bg-green-900"
+    : isAmber
+    ? "border border-amber-700 bg-amber-950 text-amber-300 hover:bg-amber-900"
+    : "border border-gray-400 bg-gray-100 text-gray-800 hover:bg-gray-200";
+
+  const labelClass = isTerminal ? "text-green-700" : isAmber ? "text-amber-700" : "text-gray-500";
+  const valClass   = isTerminal ? "text-green-500" : isAmber ? "text-amber-400" : "text-gray-700";
+  
   return (
     <div className="flex flex-col flex-1 p-4 gap-4">
       {/* Canvas oculto para procesar frames */}
