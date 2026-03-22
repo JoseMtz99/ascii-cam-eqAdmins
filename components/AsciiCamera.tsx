@@ -191,6 +191,15 @@ export default function AsciiCamera() {
           </button>
         )}
 
+        {isRunning && (
+          <button
+            onClick={() => {}}
+            className="px-5 py-2 bg-blue-900 hover:bg-blue-800 text-blue-300 border border-blue-600 rounded text-sm transition-all cursor-pointer"
+          >
+            [ SAVE PNG ]
+          </button>
+        )}
+
         {/* Indicadores de estado */}
         <div className="flex items-center gap-3 text-xs text-green-700">
           <span>
