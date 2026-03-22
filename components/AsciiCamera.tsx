@@ -149,7 +149,6 @@ export default function AsciiCamera() {
     setFps(0);
   }, []);
 
-<<<<<<< HEAD
   // ============================================================
   // Implementación TODO #3: Guardar captura como PNG
   // ============================================================
@@ -193,7 +192,6 @@ export default function AsciiCamera() {
     link.href = dataUrl;
     link.click();
   }, [asciiOutput]);
-=======
   // TODO #3 - Parte de Emilio Sarmiento: Crear el canvas temporal del texto ASCII
   const createTempCanvasForAscii = useCallback((text: string) => {
     if (!text) return null;
@@ -233,7 +231,6 @@ export default function AsciiCamera() {
 
     return canvas;
   }, []);
->>>>>>> 72cb149c618e1e53ddb648c8487b1ba9225ad5bc
 
   // Cleanup al desmontar
   useEffect(() => {
