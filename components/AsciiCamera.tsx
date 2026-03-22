@@ -178,7 +178,7 @@ export default function AsciiCamera() {
   const valClass   = isTerminal ? "text-green-500" : isAmber ? "text-amber-400" : "text-gray-700";
   
   return (
-    <div className="flex flex-col flex-1 p-4 gap-4">
+    <div className={`flex flex-col flex-1 p-4 gap-4 ${themeClass} transition-colors duration-300`}>
       {/* Canvas oculto para procesar frames */}
       <canvas
         ref={canvasRef}
@@ -248,7 +248,7 @@ export default function AsciiCamera() {
       )}
 
       {/* ASCII Output */}
-      <div className="flex-1 bg-black border border-green-900 rounded overflow-auto relative">
+      <div className={`flex-1 bg-black border rounded overflow-auto relative ${borderClass}`}>
         {!isRunning && !asciiOutput ? (
           <div className="flex items-center justify-center h-full min-h-[300px] text-green-800 text-sm">
             <div className="text-center">
@@ -258,9 +258,12 @@ export default function AsciiCamera() {
             </div>
           </div>
         ) : (
-          <pre className="ascii-output p-2 text-green-400 leading-none">
-            {asciiOutput}
-          </pre>
+      <pre
+        className="ascii-output p-2 leading-none"
+        style={{ color: isTerminal ? "#4ade80" : isAmber ? "#fbbf24" : "#111111" }}
+      >
+        {asciiOutput}
+      </pre>
         )}
       </div>
 
