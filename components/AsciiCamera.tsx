@@ -11,7 +11,20 @@
 // ============================================================
 
 import { useRef, useEffect, useState, useCallback } from "react";
-import { imageDataToAscii, CHARSET_STANDARD } from "@/lib/ascii";
+import {
+  imageDataToAscii,
+  CHARSET_STANDARD,
+  CHARSET_BLOCKS,
+  CHARSET_MINIMAL,
+  CHARSET_DENSE,
+} from "@/lib/ascii";
+
+const CHARSET_MAP = {
+  STANDARD: CHARSET_STANDARD,
+  BLOCKS: CHARSET_BLOCKS,
+  MINIMAL: CHARSET_MINIMAL,
+  DENSE: CHARSET_DENSE,
+} as const;
 
 // ============================================================
 // TODO #1 — EQUIPO 1: Filtro de inversion de colores
@@ -52,14 +65,6 @@ import { imageDataToAscii, CHARSET_STANDARD } from "@/lib/ascii";
 // Pista: usar un estado `theme` y aplicar clases condicionales.
 // ============================================================
 
-// ============================================================
-// TODO #5 — EQUIPO 6: Selector de charset
-// ============================================================
-// Ver lib/ascii.ts para la descripcion completa.
-// Aqui agregar un <select> o botones que cambien el charset
-// y pasen la nueva variable a imageDataToAscii.
-// ============================================================
-
 export default function AsciiCamera() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -71,6 +76,8 @@ export default function AsciiCamera() {
   const [error, setError] = useState<string>("");
   const [fps, setFps] = useState(0);
   const [theme, setTheme] = useState<"terminal" | "light" | "amber">("terminal");
+  // Equipo 5: Selector de charset — Charset seleccionado por el usuario; usamos la clave para mapearlo rápido
+  const [charsetKey, setCharsetKey] = useState<"STANDARD" | "BLOCKS" | "MINIMAL" | "DENSE">("STANDARD");
   const lastFrameTime = useRef(Date.now());
   const [mounted, setMounted] = useState(false);
 
@@ -80,6 +87,8 @@ export default function AsciiCamera() {
   
   // Usamos una referencia para el loop de animación (evita stale closures)
   const colsRef = useRef<number>(120);
+  // Equipo 5: Selector de charset — Ref para charset evita re-render extra en el loop de raf
+  const charsetRef = useRef<string>(CHARSET_STANDARD);
 
   // Funcion principal del loop de renderizado
   const renderFrame = useCallback(() => {
@@ -104,7 +113,7 @@ export default function AsciiCamera() {
     const currentRows = Math.floor(currentCols / 2);
     
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const ascii = imageDataToAscii(imageData, currentCols, currentRows, CHARSET_STANDARD);
+    const ascii = imageDataToAscii(imageData, currentCols, currentRows, charsetRef.current); // Equipo 5: Selector de charset — aplica charset activo
     setAsciiOutput(ascii);
 
     // Calcular FPS
@@ -156,6 +165,14 @@ export default function AsciiCamera() {
     setAsciiOutput("");
     setFps(0);
   }, []);
+
+  const handleCharsetChange = useCallback(
+    (key: keyof typeof CHARSET_MAP) => {
+      setCharsetKey(key);
+      charsetRef.current = CHARSET_MAP[key]; // Equipo 5: Selector de charset — actualiza ref usada por el loop sin esperar re-render
+    },
+    []
+  );
 
   // ============================================================
   // Implementación TODO #3: Guardar captura como PNG
@@ -268,6 +285,7 @@ export default function AsciiCamera() {
 
   const labelClass = isTerminal ? "text-green-700" : isAmber ? "text-amber-700" : "text-gray-500";
   const valClass   = isTerminal ? "text-green-500" : isAmber ? "text-amber-400" : "text-gray-700";
+  const charsetLabel = charsetKey;
   
   return (
     <div className={`flex flex-col flex-1 p-4 gap-4 ${themeClass} transition-colors duration-300`}>
@@ -324,6 +342,23 @@ export default function AsciiCamera() {
             className="w-24 cursor-pointer accent-green-500"
           />
         </div>
+        {/* Charset Selector */}
+        <div className="flex items-center gap-2 border border-green-900 bg-black px-3 py-1.5 rounded">
+          <label htmlFor="charset-select" className="text-xs text-green-600 font-bold">
+            CHARSET:
+          </label>
+          <select
+            id="charset-select"
+            value={charsetKey}
+            onChange={(e) => handleCharsetChange(e.target.value as keyof typeof CHARSET_MAP)}
+            className="text-sm bg-black text-green-300 border border-green-700 rounded px-2 py-1 cursor-pointer outline-none"
+          >
+            <option value="STANDARD">STANDARD</option>
+            <option value="BLOCKS">BLOCKS</option>
+            <option value="MINIMAL">MINIMAL</option>
+            <option value="DENSE">DENSE</option>
+          </select>
+        </div>
         {/* TODO #4: Tema */}
         {mounted && (
           <button
@@ -350,7 +385,7 @@ export default function AsciiCamera() {
             <span className="text-green-500">
               {asciiCols}×{asciiRows}
             </span>
-            <span className={valClass}>{ASCII_COLS}×{ASCII_ROWS}</span>
+            <span className={valClass}>{asciiCols}×{asciiRows}</span>
           </span>
           {isRunning && (
             <span>
@@ -360,7 +395,7 @@ export default function AsciiCamera() {
           )}
           <span>
             CHARSET:{" "}
-            <span className={`font-bold ${valClass}`}>STANDARD</span>
+            <span className={`font-bold ${valClass}`}>{charsetLabel}</span>
           </span>
         </div>
 
